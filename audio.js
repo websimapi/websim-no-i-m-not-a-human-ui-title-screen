@@ -1,146 +1,46 @@
+const AUDIO_DURATION = 95, FADE = 15, FADE_OUT_START = 80;
+export const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+let audioUnlocked = false;
+let backgroundAudioElement;
+let knockBuffers = [], uiHoverBuffer = null, tvStaticLoopBuffer = null, primaryKnockBuffer = null;
+let knockTimeoutId = null, knockingActive = false;
 
-```javascript
-export class AudioManager {
-    constructor() {
-        this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        this.audioUnlocked = false;
-        this.backgroundAudioElement = null;
-        this.cutsceneAudio = null;
-        this.knockBuffers = [];
-        this.uiHoverBuffer = null;
-        this.tvStaticLoopBuffer = null;
-        this.primaryKnockBuffer = null;
-        this.knockTimeoutId = null;
-        this.knockingActive = false;
-
-        this.AUDIO_DURATION = 95;
-        this.FADE = 15;
-        this.FADE_OUT_START = 80;
-        this.knockSoundUrls = ['knock.mp3', 'knock_2.mp3', 'knock_3.mp3', 'knock_4.mp3'];
-    }
-
-    async loadSound(url) {
-        try {
-            const response = await fetch(url);
-            const arrayBuffer = await response.arrayBuffer();
-            return await this.audioCtx.decodeAudioData(arrayBuffer);
-        } catch (e) {
-            console.error(`Failed to load or decode sound: ${url}`, e);
-            return null;
-        }
-    }
-
-    async loadAllSounds() {
-        this.knockBuffers = await Promise.all(this.knockSoundUrls.map(url => this.loadSound(url)));
-        this.knockBuffers = this.knockBuffers.filter(b => b); // remove nulls on failure
-        this.uiHoverBuffer = await this.loadSound('ui_hover.mp3');
-        this.tvStaticLoopBuffer = await this.loadSound('tv_static_loop.mp3');
-        this.primaryKnockBuffer = await this.loadSound('knock.mp3');
-    }
-
-    setupAudio() {
-        if (this.backgroundAudioElement) return; // Already setup
-        const audio = new Audio('Fleshy Decay - Sonauto.ai.ogg');
-        this.backgroundAudioElement = audio;
-        audio.loop = false; audio.preload = 'auto';
-
-        const src = this.audioCtx.createMediaElementSource(audio);
-        const gain = this.audioCtx.createGain(); gain.gain.value = 0;
-        src.connect(gain).connect(this.audioCtx.destination);
-
-        const apply = () => {
-            const t = audio.currentTime; let g = 1;
-            if (t < this.FADE) g = t / this.FADE;
-            else if (t >= this.FADE_OUT_START) g = Math.max(0, (this.AUDIO_DURATION - t) / this.FADE);
-            gain.gain.setTargetAtTime(g, this.audioCtx.currentTime, 0.05);
-        };
-        audio.addEventListener('timeupdate', apply);
-        audio.addEventListener('seeked', apply);
-
-        audio.addEventListener('ended', () => { audio.currentTime = 0; audio.play(); });
-        audio.play().catch(e => console.error("Background audio play failed:", e));
-    }
-
-    async unlockAudio() {
-        if (this.audioUnlocked) return;
-        if (this.audioCtx.state === 'suspended') {
-            await this.audioCtx.resume();
-        }
-        this.audioUnlocked = true;
-    }
-
-    playSound(buffer, volume = 1.0, onEndedCallback = null, loop = false, fadeInDuration = 0) {
-        if (!this.audioUnlocked || !buffer) return null;
-
-        try {
-            const source = this.audioCtx.createBufferSource();
-            source.buffer = buffer;
-            source.loop = loop;
-
-            const gainNode = this.audioCtx.createGain();
-            if (fadeInDuration > 0) {
-                gainNode.gain.setValueAtTime(0, this.audioCtx.currentTime);
-                gainNode.gain.linearRampToValueAtTime(volume, this.audioCtx.currentTime + fadeInDuration);
-            } else {
-                gainNode.gain.value = volume;
-            }
-
-            source.connect(gainNode);
-            gainNode.connect(this.audioCtx.destination);
-            source.start(0);
-
-            if (onEndedCallback && !loop) {
-                source.addEventListener('ended', onEndedCallback, { once: true });
-            }
-
-            return { source, gainNode };
-        } catch (e) {
-            console.error("Could not play sound:", e);
-            return null;
-        }
-    }
-
-    playKnock() {
-        if (this.knockBuffers.length === 0) return;
-        const randomIndex = Math.floor(Math.random() * this.knockBuffers.length);
-        this.playSound(this.knockBuffers[randomIndex]);
-    }
-
-    scheduleNextKnock() {
-        this.knockingActive = true;
-        const randomInterval = Math.random() * (10000 - 3000) + 3000;
-        this.knockTimeoutId = setTimeout(() => { 
-            if (!this.knockingActive) return; 
-            this.playKnock(); 
-            this.scheduleNextKnock(); 
-        }, randomInterval);
-    }
-
-    stopKnocks() {
-        this.knockingActive = false;
-        if (this.knockTimeoutId) { 
-            clearTimeout(this.knockTimeoutId); 
-            this.knockTimeoutId = null; 
-        }
-    }
-
-    async setupCutsceneAudio() {
-        this.cutsceneAudio = new Audio('Distant Transmission - Sonauto.ai.ogg'); 
-        const src = this.audioCtx.createMediaElementSource(this.cutsceneAudio);
-        const g = this.audioCtx.createGain(); g.gain.value = 0; 
-        src.connect(g).connect(this.audioCtx.destination);
-        await this.audioCtx.resume(); 
-        await this.cutsceneAudio.play().catch(() => {});
-        g.gain.linearRampToValueAtTime(1, this.audioCtx.currentTime + 7);
-        setTimeout(() => { 
-            g.gain.cancelScheduledValues(this.audioCtx.currentTime); 
-            g.gain.linearRampToValueAtTime(0, this.audioCtx.currentTime + 7); 
-        }, (115 - 7) * 1000);
-    }
-
-    pauseBackgroundAudio() {
-        if (this.backgroundAudioElement) { 
-            try { this.backgroundAudioElement.pause(); } catch(e) {} 
-        }
-    }
+async function loadSound(url){
+  try { const r=await fetch(url); const b=await r.arrayBuffer(); return await audioCtx.decodeAudioData(b); } catch(e){ console.error('Failed sound', url, e); return null; }
 }
+export async function loadAllSounds(){
+  const urls = ['knock.mp3','knock_2.mp3','knock_3.mp3','knock_4.mp3'];
+  knockBuffers = (await Promise.all(urls.map(loadSound))).filter(Boolean);
+  uiHoverBuffer = await loadSound('ui_hover.mp3');
+  tvStaticLoopBuffer = await loadSound('tv_static_loop.mp3');
+  primaryKnockBuffer = await loadSound('knock.mp3');
+}
+export async function unlockAudio(){
+  if (audioUnlocked) return; if (audioCtx.state === 'suspended') await audioCtx.resume(); audioUnlocked = true;
+}
+export function setupBackgroundAudio(){
+  if (backgroundAudioElement) return;
+  const audio = new Audio('Fleshy Decay - Sonauto.ai.ogg'); backgroundAudioElement = audio; audio.loop=false; audio.preload='auto';
+  const src = audioCtx.createMediaElementSource(audio); const gain = audioCtx.createGain(); gain.gain.value=0; src.connect(gain).connect(audioCtx.destination);
+  const apply=()=>{ const t=audio.currentTime; let g=1; if(t<FADE) g=t/FADE; else if(t>=FADE_OUT_START) g=Math.max(0,(AUDIO_DURATION-t)/FADE); gain.gain.setTargetAtTime(g, audioCtx.currentTime, 0.05); };
+  audio.addEventListener('timeupdate', apply); audio.addEventListener('seeked', apply); audio.addEventListener('ended', ()=>{ audio.currentTime=0; audio.play(); });
+  audio.play().catch(e=>console.error('BG play failed', e));
+}
+export function playSound(buffer, volume=1.0, onEnded=null, loop=false, fadeInDuration=0){
+  if (!audioUnlocked || !buffer) return null;
+  try {
+    const source = audioCtx.createBufferSource(); source.buffer = buffer; source.loop = loop;
+    const gainNode = audioCtx.createGain(); if (fadeInDuration>0){ gainNode.gain.setValueAtTime(0, audioCtx.currentTime); gainNode.gain.linearRampToValueAtTime(volume, audioCtx.currentTime + fadeInDuration); } else { gainNode.gain.value = volume; }
+    source.connect(gainNode); gainNode.connect(audioCtx.destination); source.start(0);
+    if (onEnded && !loop) source.addEventListener('ended', onEnded, { once:true });
+    return { source, gainNode };
+  } catch(e){ console.error('Could not play sound', e); return null; }
+}
+export function scheduleNextKnock(){
+  knockingActive = true; const randomInterval = Math.random()*(10000-3000)+3000;
+  knockTimeoutId = setTimeout(()=>{ if(!knockingActive) return; if(knockBuffers.length){ playSound(knockBuffers[Math.floor(Math.random()*knockBuffers.length)]); } scheduleNextKnock(); }, randomInterval);
+}
+export function stopKnocks(){ knockingActive=false; if(knockTimeoutId){ clearTimeout(knockTimeoutId); knockTimeoutId=null; } }
+export function playPrimaryKnock(){ if(primaryKnockBuffer) playSound(primaryKnockBuffer, 1.0); }
+export function getUIBuffers(){ return { uiHoverBuffer, tvStaticLoopBuffer }; }
+export function getBackgroundAudio(){ return backgroundAudioElement; }
