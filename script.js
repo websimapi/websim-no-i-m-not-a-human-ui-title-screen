@@ -312,6 +312,14 @@ document.addEventListener('DOMContentLoaded', () => {
             await unlockAudio();
             setupAudio();
             scheduleNextKnock();
+
+            // Transition fog to be a background element on the main page
+            const fogCanvas = document.getElementById('fog-canvas');
+            if (fogCanvas) {
+                fogCanvas.style.zIndex = '1';
+                fogCanvas.style.background = 'transparent';
+            }
+
             // fade out the black loading overlay now that user confirmed
             const loadingOverlay = document.getElementById('loading-overlay');
             if (loadingOverlay) loadingOverlay.classList.add('hidden');
@@ -456,14 +464,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function startCutscene(){
-        const cs=document.getElementById('cutscene'), img=document.getElementById('cutscene-image');
+        const cs=document.getElementById('cutscene'), img=document.createElement('img');
+        img.id = 'cutscene-image';
+        img.alt = 'Cutscene scene';
+        cs.prepend(img); // Prepend so canvas can overlay it
+
         const canvas=document.getElementById('cutscene-canvas');
         const loading=cs.querySelector('.cutscene-loading'); cs.style.display='flex'; loading.style.display='grid';
         img.onload=()=>{ 
             loading.style.display='none'; 
             applyPosterizeToImage(canvas, img, 5.0, 0.12); 
-            canvas.classList.add('reveal'); 
-            img.style.display='none'; 
+            canvas.classList.add('reveal');
+            img.style.display = 'none'; // Hide original image after rendering to canvas
             animateBirds(); // Start bird animation
         };
         img.src='cutscene_landscape.png';

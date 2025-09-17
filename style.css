@@ -1,5 +1,3 @@
-
-```css
 * {
     margin: 0;
     padding: 0;
@@ -500,8 +498,6 @@ footer {
 
 @keyframes commaBounce { 0%,100%{ transform: translateY(0) } 50%{ transform: translateY(-6px) } }
 
-h1 .bounce-comma.slow { animation-duration: 4s; animation-iteration-count: 1; animation-timing-function: ease-out; }
-
 h1 .not-word { color:#f33; transition: color 1.5s ease; }
 
 h1 .not-word.pulse-red { animation: notPulse 1.2s ease; }
@@ -512,12 +508,11 @@ h1 .not-word.pulse-red { animation: notPulse 1.2s ease; }
     position: fixed;
     inset: 0;
     background: #000;
-    display: none;
-    z-index: 10002;
-    align-items: center;
-    justify-content: center;
+    display: block; /* Was none */
+    z-index: 10000; /* Under UI overlay, over loading screen */
     height: 100dvh;
     overflow: hidden; /* Prevent birds from showing outside the frame */
+    transition: background-color 1.5s ease;
 }
 
 #cutscene {
@@ -541,7 +536,17 @@ h1 .not-word.pulse-red { animation: notPulse 1.2s ease; }
     filter: contrast(1.15) saturate(1.05) brightness(0.98);
 }
 
-#cutscene canvas.reveal, #cutscene img.reveal {
+#cutscene canvas {
+    position: absolute; /* Ensure canvas overlays the img for the effect */
+    top: 0;
+    left: 0;
+}
+
+#cutscene img.reveal { /* This rule is no longer needed for the image */
+    opacity: 1;
+}
+
+#cutscene canvas.reveal {
     opacity: 1;
 }
 
