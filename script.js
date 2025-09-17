@@ -216,7 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!flockContainer) return;
 
         const flockSize = 4; // Changed from 5 to 4
-        const journeyDuration = 35000; // 35 seconds, was 22000
+        const journeyDuration = 70000; // 70 seconds, was 35000
         const startTime = performance.now() + 4000; // Start after 4 seconds
 
         const birds = [];
