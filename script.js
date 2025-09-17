@@ -257,6 +257,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             progress = Math.min(progress, 1);
+            
+            // Ease-in for the first part of the flight to make size change smoother
+            const easedProgress = progress < 0.5 ? 2 * progress * progress : -1 + (4 - 2 * progress) * progress;
 
             // Path from mid-left to top-right
             const startX = window.innerWidth * 0.3;
@@ -264,8 +267,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const endX = window.innerWidth * 0.8;
             const endY = window.innerHeight * -0.1;
 
-            const leaderX = startX + (endX - startX) * progress;
-            const leaderY = startY + (endY - startY) * progress;
+            const leaderX = startX + (endX - startX) * easedProgress;
+            const leaderY = startY + (endY - startY) * easedProgress;
+            
+            // Birds start smaller and grow to full size over the first 40% of their journey
+            const scale = Math.min(1, 0.4 + easedProgress / 0.4);
 
             birds.forEach((bird, i) => {
                 if(progress > 0 && bird.el.style.opacity !== '1') {
@@ -279,7 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 bird.el.style.transform = `translate(
                     ${leaderX + bird.offsetX + currentWobbleX}px,
                     ${leaderY + bird.offsetY + currentWobbleY}px
-                )`;
+                ) scale(${scale})`;
             });
 
             animationFrameId = requestAnimationFrame(flightLoop);
