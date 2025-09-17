@@ -1,3 +1,5 @@
+
+```css
 * {
     margin: 0;
     padding: 0;
@@ -574,7 +576,7 @@ h1 .not-word.pulse-red { animation: notPulse 1.2s ease; }
     height: 2vw;
     max-width: 24px;
     max-height: 24px;
-    /* background-image is now set dynamically via JS */
+    background-image: url(bird_flap_sprite.png);
     background-size: 400% 100%;
     animation: flap 0.4s steps(4) infinite;
     will-change: transform;
