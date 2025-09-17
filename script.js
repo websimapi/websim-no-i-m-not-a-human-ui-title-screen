@@ -211,6 +211,83 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function animateBirds() {
+        const flockContainer = document.getElementById('bird-flock');
+        if (!flockContainer) return;
+
+        const flockSize = 5;
+        const journeyDuration = 22000; // 22 seconds
+        const startTime = performance.now() + 4000; // Start after 4 seconds
+
+        const birds = [];
+        for (let i = 0; i < flockSize; i++) {
+            const bird = document.createElement('div');
+            bird.className = 'bird';
+            flockContainer.appendChild(bird);
+            
+            // Stagger flapping animation delays for a more natural look
+            bird.style.animationDelay = `${Math.random() * -0.5}s`;
+
+            birds.push({
+                el: bird,
+                // V-formation offset
+                offsetX: (i % 2 === 0 ? 1 : -1) * Math.ceil(i/2) * (window.innerWidth * 0.03),
+                offsetY: Math.ceil(i/2) * (window.innerHeight * -0.02),
+                // Add some random wobble
+                wobbleX: Math.random() * 15 - 7.5,
+                wobbleY: Math.random() * 10 - 5,
+                wobbleSpeed: Math.random() * 1.5 + 1,
+            });
+        }
+
+        let animationFrameId;
+        function flightLoop(now) {
+            if (now < startTime) {
+                animationFrameId = requestAnimationFrame(flightLoop);
+                return;
+            }
+
+            const elapsedTime = now - startTime;
+            let progress = elapsedTime / journeyDuration;
+            
+            if (progress > 1.2) { // Let them fly off screen a bit then clean up
+                flockContainer.innerHTML = '';
+                cancelAnimationFrame(animationFrameId);
+                return;
+            }
+            
+            progress = Math.min(progress, 1);
+
+            // Path from mid-left to top-right
+            const startX = window.innerWidth * 0.3;
+            const startY = window.innerHeight * 0.45;
+            const endX = window.innerWidth * 0.8;
+            const endY = window.innerHeight * -0.1;
+
+            const leaderX = startX + (endX - startX) * progress;
+            const leaderY = startY + (endY - startY) * progress;
+
+            birds.forEach((bird, i) => {
+                if(progress > 0 && bird.el.style.opacity !== '1') {
+                    bird.el.style.opacity = '1';
+                }
+
+                const wobbleTime = elapsedTime / 1000 * bird.wobbleSpeed;
+                const currentWobbleX = Math.sin(wobbleTime + i) * bird.wobbleX;
+                const currentWobbleY = Math.cos(wobbleTime + i) * bird.wobbleY;
+
+                bird.el.style.transform = `translate(
+                    ${leaderX + bird.offsetX + currentWobbleX}px,
+                    ${leaderY + bird.offsetY + currentWobbleY}px
+                )`;
+            });
+
+            animationFrameId = requestAnimationFrame(flightLoop);
+        }
+        
+        animationFrameId = requestAnimationFrame(flightLoop);
+    }
+
     function initOverlayFlow() {
         const overlay = document.getElementById('ui-overlay');
         const prompt = document.getElementById('overlay-prompt');
@@ -376,7 +453,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const cs=document.getElementById('cutscene'), img=document.getElementById('cutscene-image');
         const canvas=document.getElementById('cutscene-canvas');
         const loading=cs.querySelector('.cutscene-loading'); cs.style.display='flex'; loading.style.display='grid';
-        img.onload=()=>{ loading.style.display='none'; applyPosterizeToImage(canvas, img, 5.0, 0.12); canvas.classList.add('reveal'); img.style.display='none'; };
+        img.onload=()=>{ 
+            loading.style.display='none'; 
+            applyPosterizeToImage(canvas, img, 5.0, 0.12); 
+            canvas.classList.add('reveal'); 
+            img.style.display='none'; 
+            animateBirds(); // Start bird animation
+        };
         img.src='cutscene_landscape.png';
         if(backgroundAudioElement) { try{ backgroundAudioElement.pause(); }catch(e){} }
         cutsceneAudio=new Audio('Distant Transmission - Sonauto.ai.ogg'); const src=audioCtx.createMediaElementSource(cutsceneAudio);

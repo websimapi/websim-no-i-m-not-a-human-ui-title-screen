@@ -56,20 +56,6 @@ export function applyPosterizeToImage(canvas, image, levels = 5.0, edgeMix = 0.1
       return value;
   }
 
-  // Function to draw a single bird
-  float drawBird(vec2 uv, vec2 center, float size, float flap) {
-      vec2 p = uv - center;
-      p.x += sin(uv.y * 250.0 + uTime * 2.0) * 0.0002; // Tiny shimmer
-      p /= size;
-      
-      float wingAngle = 0.8 + flap * 0.4;
-      float wing1 = dot(p, normalize(vec2(1.0, wingAngle)));
-      float wing2 = dot(p, normalize(vec2(-1.0, wingAngle)));
-      
-      float birdShape = max(abs(p.y), 0.0) * 0.2 + max(min(wing1, wing2), 0.0);
-      return 1.0 - smoothstep(0.0, 0.15, birdShape);
-  }
-
   void main(){
     float skyMask = smoothstep(0.45, 0.0, vUV.y); // 1 at top, 0 by ~45% down
 
@@ -78,36 +64,6 @@ export function applyPosterizeToImage(canvas, image, levels = 5.0, edgeMix = 0.1
     vec2 distortedUV = vUV + (motion - 0.5) * 0.1 * skyMask; // Apply displacement based on mask. Increased from 0.05
 
     vec3 col = texture2D(uTex0, distortedUV).rgb;
-
-    // --- Bird Animation ---
-    float birdsMask = 0.0;
-    float journeyDuration = 25.0;
-    float journeyStartTime = 4.0;
-    float timeInJourney = uTime - journeyStartTime;
-
-    if (timeInJourney > 0.0 && timeInJourney < journeyDuration) {
-        float progress = timeInJourney / journeyDuration;
-        vec2 startPos = vec2(0.3, 0.45);
-        vec2 endPos = vec2(0.8, -0.1);
-        vec2 leaderPos = mix(startPos, endPos, progress);
-
-        float flapSpeed = 8.0;
-        float flap = (sin(uTime * flapSpeed) * 0.5 + 0.5);
-
-        for (int i = 0; i < 5; i++) {
-            float i_f = float(i);
-            vec2 offset = vec2(i_f * -0.05, i_f * 0.035);
-            if (mod(i_f, 2.0) == 0.0) {
-                 offset.y = -offset.y;
-            }
-            offset += vec2(
-                sin(uTime * 1.5 + i_f) * 0.003,
-                cos(uTime * 1.5 + i_f) * 0.002
-            );
-            birdsMask += drawBird(vUV, leaderPos + offset, 0.012, flap);
-        }
-    }
-    col = mix(col, vec3(0.05), birdsMask * skyMask); // Draw birds only in the sky
 
     // Modulate posterization levels with fog motion in the sky
     float dynamicLevels = uLevels + motion.x * 3.0 * skyMask;
