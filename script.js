@@ -223,6 +223,8 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let i = 0; i < flockSize; i++) {
             const bird = document.createElement('div');
             bird.className = 'bird';
+            // Set initial position off-screen to prevent sliding from top-left
+            bird.style.transform = 'translate(-100px, -100px)';
             flockContainer.appendChild(bird);
             
             bird.style.animationDelay = `${Math.random() * -0.5}s`;
@@ -235,7 +237,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Add some random wobble
                 wobbleX: Math.random() * 20 - 10, // Increased wobble range
                 wobbleY: Math.random() * 15 - 7.5, // Increased wobble range
-                wobbleSpeed: Math.random() * 1.5 + 1.2, // Slightly faster wobble
+                wobbleSpeed: Math.random() * 0.5 + 0.5, // Slower wobble: was 1.2-2.7, now 0.5-1.0
             });
         }
 
