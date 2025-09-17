@@ -570,7 +570,8 @@ h1 .not-word.pulse-red { animation: notPulse 1.2s ease; }
     position: absolute;
     inset: 0;
     pointer-events: none;
-    z-index: 1; /* Above canvas */
+    z-index: 0; /* Behind canvas to be affected by the shader */
+    mix-blend-mode: multiply; /* Blend birds with the canvas content */
 }
 
 .bird {
