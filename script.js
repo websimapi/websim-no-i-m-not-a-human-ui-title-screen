@@ -215,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const flockContainer = document.getElementById('bird-flock');
         if (!flockContainer) return;
 
-        const flockSize = 5;
+        const flockSize = 4; // Changed from 5 to 4
         const journeyDuration = 22000; // 22 seconds
         const startTime = performance.now() + 4000; // Start after 4 seconds
 
@@ -225,18 +225,17 @@ document.addEventListener('DOMContentLoaded', () => {
             bird.className = 'bird';
             flockContainer.appendChild(bird);
             
-            // Stagger flapping animation delays for a more natural look
             bird.style.animationDelay = `${Math.random() * -0.5}s`;
 
             birds.push({
                 el: bird,
-                // V-formation offset
-                offsetX: (i % 2 === 0 ? 1 : -1) * Math.ceil(i/2) * (window.innerWidth * 0.03),
-                offsetY: Math.ceil(i/2) * (window.innerHeight * -0.02),
+                // V-formation offset, adjusted for 4 birds
+                offsetX: (i % 2 === 0 ? 1 : -1) * Math.ceil(i/2) * (window.innerWidth * 0.025),
+                offsetY: Math.ceil(i/2) * (window.innerHeight * -0.015),
                 // Add some random wobble
-                wobbleX: Math.random() * 15 - 7.5,
-                wobbleY: Math.random() * 10 - 5,
-                wobbleSpeed: Math.random() * 1.5 + 1,
+                wobbleX: Math.random() * 20 - 10, // Increased wobble range
+                wobbleY: Math.random() * 15 - 7.5, // Increased wobble range
+                wobbleSpeed: Math.random() * 1.5 + 1.2, // Slightly faster wobble
             });
         }
 
@@ -258,23 +257,21 @@ document.addEventListener('DOMContentLoaded', () => {
             
             progress = Math.min(progress, 1);
             
-            // Ease-in for the first part of the flight to make size change smoother
             const easedProgress = progress < 0.5 ? 2 * progress * progress : -1 + (4 - 2 * progress) * progress;
 
-            // Path from mid-left to top-right
-            const startX = window.innerWidth * 0.3;
-            const startY = window.innerHeight * 0.45;
-            const endX = window.innerWidth * 0.8;
-            const endY = window.innerHeight * -0.1;
+            // Checkmark-like path using a quadratic Bezier curve
+            const p0 = { x: window.innerWidth * 0.3, y: window.innerHeight * 0.5 };   // Start
+            const p1 = { x: window.innerWidth * 0.4, y: window.innerHeight * 0.15 };  // Control point (the "bend")
+            const p2 = { x: window.innerWidth * 0.9, y: window.innerHeight * -0.1 };  // End
 
-            const leaderX = startX + (endX - startX) * easedProgress;
-            const leaderY = startY + (endY - startY) * easedProgress;
+            const leaderX = Math.pow(1 - easedProgress, 2) * p0.x + 2 * (1 - easedProgress) * easedProgress * p1.x + Math.pow(easedProgress, 2) * p2.x;
+            const leaderY = Math.pow(1 - easedProgress, 2) * p0.y + 2 * (1 - easedProgress) * easedProgress * p1.y + Math.pow(easedProgress, 2) * p2.y;
             
-            // Birds start smaller and grow to full size over the first 40% of their journey
-            const scale = Math.min(1, 0.4 + easedProgress / 0.4);
+            // Birds start at a regular size and get smaller as they fly away.
+            const scale = 1.0 - (easedProgress * 0.7); // Shrink to 30% of original size
 
             birds.forEach((bird, i) => {
-                if(progress > 0 && bird.el.style.opacity !== '1') {
+                if(progress > 0.01 && bird.el.style.opacity !== '1') {
                     bird.el.style.opacity = '1';
                 }
 

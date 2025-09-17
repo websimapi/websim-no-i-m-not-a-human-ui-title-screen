@@ -577,10 +577,10 @@ h1 .not-word.pulse-red { animation: notPulse 1.2s ease; }
     position: absolute;
     top: 0;
     left: 0;
-    width: 2vw;
-    height: 2vw;
-    max-width: 24px;
-    max-height: 24px;
+    width: 1.5vw;
+    height: 1.5vw;
+    max-width: 18px;
+    max-height: 18px;
     background-image: url(bird_flap_sprite.png);
     background-size: 400% 100%;
     animation: flap 0.4s steps(4) infinite;
