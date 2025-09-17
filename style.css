@@ -589,7 +589,7 @@ h1 .not-word.pulse-red { animation: notPulse 1.2s ease; }
     will-change: transform;
     filter: contrast(1.1) brightness(0.6) blur(0.5px);
     opacity: 0;
-    transition: opacity 0.5s ease-in; /* Removed transform transition */
+    transition: opacity 1.5s ease-in; /* Was 0.5s. Removed transform transition */
 }
 
 @keyframes flap {

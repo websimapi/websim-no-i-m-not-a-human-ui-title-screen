@@ -259,7 +259,8 @@ document.addEventListener('DOMContentLoaded', () => {
             
             progress = Math.min(progress, 1);
             
-            const easedProgress = progress < 0.5 ? 2 * progress * progress : -1 + (4 - 2 * progress) * progress;
+            // Use an ease-out curve, so birds move faster at the start and slower at the end (as they get further away)
+            const easedProgress = 1 - Math.pow(1 - progress, 3); // easeOutCubic
 
             // Checkmark-like path using a quadratic Bezier curve
             const p0 = { x: window.innerWidth * 0.3, y: window.innerHeight * 0.5 };   // Start
